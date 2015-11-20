@@ -37,10 +37,10 @@ the use of this software, even if advised of the possibility of such damage.
 */
 
 
-#include <opencv2/highgui.hpp>
-#include <opencv2/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/aruco/charuco.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 #include <iostream>
 #include <ctime>

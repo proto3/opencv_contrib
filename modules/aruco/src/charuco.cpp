@@ -38,8 +38,8 @@ the use of this software, even if advised of the possibility of such damage.
 
 #include "precomp.hpp"
 #include "opencv2/aruco/charuco.hpp"
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 
 namespace cv {
@@ -53,11 +53,12 @@ using namespace std;
  */
 void CharucoBoard::draw(Size outSize, OutputArray _img, int marginSize, int borderBits) {
 
+    cv::Mat _image_mat = _img.getMat();
     CV_Assert(outSize.area() > 0);
     CV_Assert(marginSize >= 0);
 
     _img.create(outSize, CV_8UC1);
-    _img.setTo(255);
+    _image_mat.setTo(255);
     Mat out = _img.getMat();
     Mat noMarginsImg =
         out.colRange(marginSize, out.cols - marginSize).rowRange(marginSize, out.rows - marginSize);
@@ -190,7 +191,7 @@ void CharucoBoard::_getNearestMarkerCorners() {
             Point3f center = Point3f(0, 0, 0);
             for(unsigned int k = 0; k < 4; k++)
                 center += objPoints[j][k];
-            center /= 4.;
+            center *= 0.25;
             double sqDistance;
             Point3f distVector = charucoCorner - center;
             sqDistance = distVector.x * distVector.x + distVector.y * distVector.y;
@@ -560,7 +561,7 @@ static int _interpolateCornersCharucoLocalHom(InputArrayOfArrays _markerCorners,
 
         // more than one closest marker detected, take middle point
         if(interpolatedPositions.size() > 1) {
-            allChessboardImgPoints[i] = (interpolatedPositions[0] + interpolatedPositions[1]) / 2.;
+            allChessboardImgPoints[i] = (interpolatedPositions[0] + interpolatedPositions[1]) * 0.5;
         }
         // a single closest marker detected
         else allChessboardImgPoints[i] = interpolatedPositions[0];
@@ -614,6 +615,7 @@ int interpolateCornersCharuco(InputArrayOfArrays _markerCorners, InputArray _mar
 void drawDetectedCornersCharuco(InputOutputArray _image, InputArray _charucoCorners,
                                 InputArray _charucoIds, Scalar cornerColor) {
 
+    cv::Mat _image_mat = _image.getMat();
     CV_Assert(_image.getMat().total() != 0 &&
               (_image.getMat().channels() == 1 || _image.getMat().channels() == 3));
     CV_Assert((_charucoCorners.getMat().total() == _charucoIds.getMat().total()) ||
@@ -624,14 +626,14 @@ void drawDetectedCornersCharuco(InputOutputArray _image, InputArray _charucoCorn
         Point2f corner = _charucoCorners.getMat().ptr< Point2f >(0)[i];
 
         // draw first corner mark
-        rectangle(_image, corner - Point2f(3, 3), corner + Point2f(3, 3), cornerColor, 1, LINE_AA);
+        rectangle(_image_mat, corner - Point2f(3, 3), corner + Point2f(3, 3), cornerColor, 1, CV_AA);
 
         // draw ID
         if(_charucoIds.total() != 0) {
             int id = _charucoIds.getMat().ptr< int >(0)[i];
             stringstream s;
             s << "id=" << id;
-            putText(_image, s.str(), corner + Point2f(5, -5), FONT_HERSHEY_SIMPLEX, 0.5,
+            putText(_image_mat, s.str(), corner + Point2f(5, -5), FONT_HERSHEY_SIMPLEX, 0.5,
                     cornerColor, 2);
         }
     }
@@ -902,7 +904,7 @@ void drawCharucoDiamond(Dictionary dictionary, Vec4i ids, int squareLength, int 
 void drawDetectedDiamonds(InputOutputArray _image, InputArrayOfArrays _corners,
                           InputArray _ids, Scalar borderColor) {
 
-
+    Mat _image_mat = _image.getMat();
     CV_Assert(_image.getMat().total() != 0 &&
               (_image.getMat().channels() == 1 || _image.getMat().channels() == 3));
     CV_Assert((_corners.total() == _ids.total()) || _ids.total() == 0);
@@ -910,8 +912,8 @@ void drawDetectedDiamonds(InputOutputArray _image, InputArrayOfArrays _corners,
     // calculate colors
     Scalar textColor, cornerColor;
     textColor = cornerColor = borderColor;
-    swap(textColor.val[0], textColor.val[1]);     // text color just sawp G and R
-    swap(cornerColor.val[1], cornerColor.val[2]); // corner color just sawp G and B
+    std::swap(textColor.val[0], textColor.val[1]);     // text color just sawp G and R
+    std::swap(cornerColor.val[1], cornerColor.val[2]); // corner color just sawp G and B
 
     int nMarkers = (int)_corners.total();
     for(int i = 0; i < nMarkers; i++) {
@@ -923,22 +925,22 @@ void drawDetectedDiamonds(InputOutputArray _image, InputArrayOfArrays _corners,
             Point2f p0, p1;
             p0 = currentMarker.ptr< Point2f >(0)[j];
             p1 = currentMarker.ptr< Point2f >(0)[(j + 1) % 4];
-            line(_image, p0, p1, borderColor, 1);
+            line(_image_mat, p0, p1, borderColor, 1);
         }
 
         // draw first corner mark
-        rectangle(_image, currentMarker.ptr< Point2f >(0)[0] - Point2f(3, 3),
-                  currentMarker.ptr< Point2f >(0)[0] + Point2f(3, 3), cornerColor, 1, LINE_AA);
+        rectangle(_image_mat, currentMarker.ptr< Point2f >(0)[0] - Point2f(3, 3),
+                  currentMarker.ptr< Point2f >(0)[0] + Point2f(3, 3), cornerColor, 1, CV_AA);
 
         // draw id composed by four numbers
         if(_ids.total() != 0) {
             Point2f cent(0, 0);
             for(int p = 0; p < 4; p++)
                 cent += currentMarker.ptr< Point2f >(0)[p];
-            cent = cent / 4.;
+            cent *= 0.25;
             stringstream s;
             s << "id=" << _ids.getMat().ptr< Vec4i >(0)[i];
-            putText(_image, s.str(), cent, FONT_HERSHEY_SIMPLEX, 0.5, textColor, 2);
+            putText(_image_mat, s.str(), cent, FONT_HERSHEY_SIMPLEX, 0.5, textColor, 2);
         }
     }
 }

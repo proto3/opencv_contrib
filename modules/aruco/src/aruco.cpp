@@ -38,8 +38,8 @@ the use of this software, even if advised of the possibility of such damage.
 
 #include "precomp.hpp"
 #include "opencv2/aruco.hpp"
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 
 namespace cv {
@@ -183,7 +183,7 @@ static void _reorderCandidatesCorners(vector< vector< Point2f > > &candidates) {
         double crossProduct = (dx1 * dy2) - (dy1 * dx2);
 
         if(crossProduct < 0.0) { // not clockwise direction
-            swap(candidates[i][1], candidates[i][3]);
+            std::swap(candidates[i][1], candidates[i][3]);
         }
     }
 }
@@ -1332,7 +1332,7 @@ GridBoard GridBoard::create(int markersX, int markersY, float markerLength, floa
 void drawDetectedMarkers(InputOutputArray _image, InputArrayOfArrays _corners,
                          InputArray _ids, Scalar borderColor) {
 
-
+    Mat _image_mat = _image.getMat();
     CV_Assert(_image.getMat().total() != 0 &&
               (_image.getMat().channels() == 1 || _image.getMat().channels() == 3));
     CV_Assert((_corners.total() == _ids.total()) || _ids.total() == 0);
@@ -1340,8 +1340,8 @@ void drawDetectedMarkers(InputOutputArray _image, InputArrayOfArrays _corners,
     // calculate colors
     Scalar textColor, cornerColor;
     textColor = cornerColor = borderColor;
-    swap(textColor.val[0], textColor.val[1]);     // text color just sawp G and R
-    swap(cornerColor.val[1], cornerColor.val[2]); // corner color just sawp G and B
+    std::swap(textColor.val[0], textColor.val[1]);     // text color just sawp G and R
+    std::swap(cornerColor.val[1], cornerColor.val[2]); // corner color just sawp G and B
 
     int nMarkers = (int)_corners.total();
     for(int i = 0; i < nMarkers; i++) {
@@ -1353,21 +1353,21 @@ void drawDetectedMarkers(InputOutputArray _image, InputArrayOfArrays _corners,
             Point2f p0, p1;
             p0 = currentMarker.ptr< Point2f >(0)[j];
             p1 = currentMarker.ptr< Point2f >(0)[(j + 1) % 4];
-            line(_image, p0, p1, borderColor, 1);
+            line(_image_mat, p0, p1, borderColor, 1);
         }
         // draw first corner mark
-        rectangle(_image, currentMarker.ptr< Point2f >(0)[0] - Point2f(3, 3),
-                  currentMarker.ptr< Point2f >(0)[0] + Point2f(3, 3), cornerColor, 1, LINE_AA);
+        rectangle(_image_mat, currentMarker.ptr< Point2f >(0)[0] - Point2f(3, 3),
+                  currentMarker.ptr< Point2f >(0)[0] + Point2f(3, 3), cornerColor, 1, CV_AA);
 
         // draw ID
         if(_ids.total() != 0) {
             Point2f cent(0, 0);
             for(int p = 0; p < 4; p++)
                 cent += currentMarker.ptr< Point2f >(0)[p];
-            cent = cent / 4.;
+            cent *= 0.25;
             stringstream s;
             s << "id=" << _ids.getMat().ptr< int >(0)[i];
-            putText(_image, s.str(), cent, FONT_HERSHEY_SIMPLEX, 0.5, textColor, 2);
+            putText(_image_mat, s.str(), cent, FONT_HERSHEY_SIMPLEX, 0.5, textColor, 2);
         }
     }
 }
@@ -1379,6 +1379,7 @@ void drawDetectedMarkers(InputOutputArray _image, InputArrayOfArrays _corners,
 void drawAxis(InputOutputArray _image, InputArray _cameraMatrix, InputArray _distCoeffs,
               InputArray _rvec, InputArray _tvec, float length) {
 
+    Mat _image_mat = _image.getMat();
     CV_Assert(_image.getMat().total() != 0 &&
               (_image.getMat().channels() == 1 || _image.getMat().channels() == 3));
     CV_Assert(length > 0);
@@ -1393,9 +1394,9 @@ void drawAxis(InputOutputArray _image, InputArray _cameraMatrix, InputArray _dis
     projectPoints(axisPoints, _rvec, _tvec, _cameraMatrix, _distCoeffs, imagePoints);
 
     // draw axis lines
-    line(_image, imagePoints[0], imagePoints[1], Scalar(0, 0, 255), 3);
-    line(_image, imagePoints[0], imagePoints[2], Scalar(0, 255, 0), 3);
-    line(_image, imagePoints[0], imagePoints[3], Scalar(255, 0, 0), 3);
+    line(_image_mat, imagePoints[0], imagePoints[1], Scalar(0, 0, 255), 3);
+    line(_image_mat, imagePoints[0], imagePoints[2], Scalar(0, 255, 0), 3);
+    line(_image_mat, imagePoints[0], imagePoints[3], Scalar(255, 0, 0), 3);
 }
 
 
